@@ -1,28 +1,26 @@
 using UnityEngine;
 using UnityEditor;
+using UnityEditor.Events;
 using UnityEngine.UI;
-using UnityEngine.EventSystems; // Soluciona el error de EventSystem
+using UnityEngine.EventSystems;
 using TMPro;
 
 public class UIAutoBuilder : EditorWindow
 {
-    [MenuItem("Tools/Generar Interfaz Responsiva")]
+    [MenuItem("Tools/Generar Interfaz Responsiva (Actividad 2.1)")]
     public static void CreateResponsiveUI()
     {
-        // 1. Crear el Canvas principal
         GameObject canvasGO = new GameObject("Responsive_Canvas");
         Canvas canvas = canvasGO.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
 
-        // Configuración de adaptación a cualquier resolución (Scale With Screen Size)
         CanvasScaler scaler = canvasGO.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920, 1080);
-        scaler.matchWidthOrHeight = 0.5f; // Equilibrio entre ancho y alto
+        scaler.matchWidthOrHeight = 0.5f;
 
         canvasGO.AddComponent<GraphicRaycaster>();
 
-        // Asegurar que exista un EventSystem (usando FindAnyObjectByType para evitar warnings)
         if (Object.FindAnyObjectByType<EventSystem>() == null)
         {
             GameObject eventSystem = new GameObject("EventSystem");
@@ -30,42 +28,50 @@ public class UIAutoBuilder : EditorWindow
             eventSystem.AddComponent<StandaloneInputModule>();
         }
 
-        // 2. TÍTULO (Arriba al centro)
-        GameObject titleGO = CreateTextObject("TitleText", "MI VENTANA PRINCIPAL", canvasGO.transform);
+        SceneSwitcher switcher = canvasGO.AddComponent<SceneSwitcher>();
+
+        // TÍTULO
+        GameObject titleGO = CreateTextObject("TitleText", "MI VENTANA PRINCIPAL (ACTIVIDAD 2.1)", canvasGO.transform);
         RectTransform titleRect = titleGO.GetComponent<RectTransform>();
         SetAnchors(titleRect, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f));
         titleRect.anchoredPosition = new Vector2(0, -80);
-        titleRect.sizeDelta = new Vector2(800, 100);
+        titleRect.sizeDelta = new Vector2(1000, 100);
         TextMeshProUGUI titleTMP = titleGO.GetComponent<TextMeshProUGUI>();
-        titleTMP.fontSize = 48;
+        titleTMP.fontSize = 44;
         titleTMP.alignment = TextAlignmentOptions.Center;
         titleTMP.fontStyle = FontStyles.Bold;
 
-        // 3. TRES BOTONES (Panel central vertical)
+        // PANEL CENTRAL
         GameObject centerPanel = new GameObject("Center_Buttons_Panel");
         centerPanel.transform.SetParent(canvasGO.transform, false);
         RectTransform centerRect = centerPanel.AddComponent<RectTransform>();
         SetAnchors(centerRect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f));
         centerRect.anchoredPosition = Vector2.zero;
-        centerRect.sizeDelta = new Vector2(350, 300);
+        centerRect.sizeDelta = new Vector2(400, 320);
 
         VerticalLayoutGroup vGroup = centerPanel.AddComponent<VerticalLayoutGroup>();
-        vGroup.spacing = 20;
+        vGroup.spacing = 15;
         vGroup.childControlWidth = true;
         vGroup.childControlHeight = true;
 
-        for (int i = 1; i <= 3; i++)
+        for (int i = 1; i <= 2; i++)
         {
             CreateButton($"Button_{i}", $"Botón Central {i}", centerPanel.transform);
         }
 
-        // 4. CUATRO ICONOS (Ubicados en las 4 esquinas/márgenes)
+        // BOTÓN PARA IR A LA ESCENA 2 (ACTIVIDAD 2.2)
+        GameObject nextBtnGO = CreateButton("Btn_GoToScene2", "IR A ESCENA 2 ->", centerPanel.transform);
+        nextBtnGO.GetComponent<Image>().color = new Color(0.18f, 0.65f, 0.35f);
+        Button nextBtn = nextBtnGO.GetComponent<Button>();
+        UnityEventTools.AddStringPersistentListener(nextBtn.onClick, switcher.LoadScene, "Escena2");
+
+        // ICONOS EN LAS 4 ESQUINAS
         Vector2[] iconAnchors = new Vector2[]
         {
-            new Vector2(0.1f, 0.85f), // Esquina Superior Izquierda
-            new Vector2(0.9f, 0.85f), // Esquina Superior Derecha
-            new Vector2(0.1f, 0.15f), // Esquina Inferior Izquierda
-            new Vector2(0.9f, 0.15f)  // Esquina Inferior Derecha
+            new Vector2(0.1f, 0.85f),
+            new Vector2(0.9f, 0.85f),
+            new Vector2(0.1f, 0.15f),
+            new Vector2(0.9f, 0.15f)
         };
 
         for (int i = 0; i < 4; i++)
@@ -79,22 +85,17 @@ public class UIAutoBuilder : EditorWindow
             iconGO.GetComponent<Image>().color = new Color(0.2f, 0.6f, 0.9f, 0.8f);
         }
 
-        // 5. ENLACES A SITIOS WEB POR COSTADO (3 a la izquierda, 3 a la derecha)
+        // ENLACES LATERALES
         string[] leftLinks = { "https://unity.com", "https://learn.unity.com", "https://assetstore.unity.com" };
         string[] rightLinks = { "https://google.com", "https://github.com", "https://docs.unity3d.com" };
 
-        // Costado Izquierdo
         CreateSidePanel("Left_Links_Panel", canvasGO.transform, new Vector2(0f, 0.5f), new Vector2(0, 0.5f), new Vector2(180, 0), leftLinks, "Izq");
-
-        // Costado Derecho
         CreateSidePanel("Right_Links_Panel", canvasGO.transform, new Vector2(1f, 0.5f), new Vector2(1, 0.5f), new Vector2(-180, 0), rightLinks, "Der");
 
-        Undo.RegisterCreatedObjectUndo(canvasGO, "Crear Interfaz Responsiva");
+        Undo.RegisterCreatedObjectUndo(canvasGO, "Crear Interfaz Responsiva Actividad 2.1");
         Selection.activeObject = canvasGO;
-        Debug.Log("✅ ¡Interfaz UI creada con éxito! Se adapta a cualquier resolución.");
+        Debug.Log("✅ Escena 1 generada correctamente con botón de enlace a Escena 2.");
     }
-
-    // --- MÉTODOS AUXILIARES ---
 
     private static void CreateSidePanel(string name, Transform parent, Vector2 anchor, Vector2 pivot, Vector2 position, string[] urls, string prefix)
     {
@@ -114,9 +115,8 @@ public class UIAutoBuilder : EditorWindow
         {
             string url = urls[i];
             GameObject btn = CreateButton($"Link_{prefix}_{i + 1}", $"Enlace {prefix} {i + 1}", panel.transform);
-            
             Button buttonComp = btn.GetComponent<Button>();
-            buttonComp.onClick.AddListener(() => Application.OpenURL(url));
+            UnityEventTools.AddPersistentListener(buttonComp.onClick, () => Application.OpenURL(url));
         }
     }
 

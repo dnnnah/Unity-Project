@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEditor;
+using UnityEditor.Events;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using TMPro;
@@ -9,7 +10,6 @@ public class SceneNavigationBuilder : EditorWindow
     [MenuItem("Tools/Generar Escena Navegable (Actividad 2.2)")]
     public static void CreateNavigationScene()
     {
-        // 1. Configurar Canvas adaptativo para múltiples dispositivos (Responsive Size)
         GameObject canvasGO = new GameObject("MainNavigation_Canvas");
         Canvas canvas = canvasGO.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
@@ -17,11 +17,10 @@ public class SceneNavigationBuilder : EditorWindow
         CanvasScaler scaler = canvasGO.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920, 1080);
-        scaler.matchWidthOrHeight = 0.5f; // Adaptable tanto a móviles como escritorio
+        scaler.matchWidthOrHeight = 0.5f;
 
         canvasGO.AddComponent<GraphicRaycaster>();
 
-        // Crear EventSystem si no existe
         if (Object.FindAnyObjectByType<EventSystem>() == null)
         {
             GameObject eventSystem = new GameObject("EventSystem");
@@ -29,57 +28,65 @@ public class SceneNavigationBuilder : EditorWindow
             eventSystem.AddComponent<StandaloneInputModule>();
         }
 
-        // Script controlador para manejar la navegación entre vistas
         NavigationController navController = canvasGO.AddComponent<NavigationController>();
+        SceneSwitcher switcher = canvasGO.AddComponent<SceneSwitcher>();
 
-        // 2. TÍTULO CON PUNTOS DE ANCLAJE (Top-Center Anchor)
+        // TÍTULO
         GameObject titleGO = CreateTextObject("Header_Title", "APLICACIÓN INTERACTIVA - UNIDAD 2", canvasGO.transform);
         RectTransform titleRect = titleGO.GetComponent<RectTransform>();
         SetAnchors(titleRect, new Vector2(0.1f, 0.88f), new Vector2(0.9f, 0.98f), new Vector2(0.5f, 0.5f));
         titleRect.anchoredPosition = Vector2.zero;
         titleRect.sizeDelta = Vector2.zero;
+        
         TextMeshProUGUI titleTMP = titleGO.GetComponent<TextMeshProUGUI>();
         titleTMP.fontSize = 40;
         titleTMP.alignment = TextAlignmentOptions.Center;
         titleTMP.fontStyle = FontStyles.Bold;
 
-        // 3. BARRA DE NAVEGACIÓN (Bottom Anchor - Botones de navegación)
+        // BARRA DE NAVEGACIÓN
         GameObject navBarGO = new GameObject("Navigation_Bar", typeof(Image));
         navBarGO.transform.SetParent(canvasGO.transform, false);
         navBarGO.GetComponent<Image>().color = new Color(0.15f, 0.15f, 0.2f, 0.9f);
+        
         RectTransform navBarRect = navBarGO.GetComponent<RectTransform>();
         SetAnchors(navBarRect, new Vector2(0f, 0f), new Vector2(1f, 0.12f), new Vector2(0.5f, 0f));
         navBarRect.anchoredPosition = Vector2.zero;
         navBarRect.sizeDelta = Vector2.zero;
 
         HorizontalLayoutGroup navLayout = navBarGO.AddComponent<HorizontalLayoutGroup>();
-        navLayout.spacing = 30;
+        navLayout.spacing = 20;
         navLayout.childControlWidth = true;
         navLayout.childControlHeight = true;
-        navLayout.padding = new RectOffset(40, 40, 15, 15);
+        navLayout.padding = new RectOffset(30, 30, 15, 15);
 
-        // Crear vistas de contenido (Paneles)
-        GameObject view1 = CreatePanel("View_Inicio", "PANEL DE INICIO", Color.gray, canvasGO.transform);
+        // VISTAS DE CONTENIDO
+        GameObject view1 = CreatePanel("View_Inicio", "PANEL DE INICIO", new Color(0.2f, 0.2f, 0.25f), canvasGO.transform);
         GameObject view2 = CreatePanel("View_Seccion1", "SECCIÓN 1 - CONTENIDO", new Color(0.2f, 0.3f, 0.4f), canvasGO.transform);
         GameObject view3 = CreatePanel("View_Seccion2", "SECCIÓN 2 - AJUSTES", new Color(0.3f, 0.2f, 0.3f), canvasGO.transform);
 
         navController.views = new GameObject[] { view1, view2, view3 };
 
-        // Botones de navegación vinculados
+        // BOTÓN VOLVER A ESCENA 1
+        GameObject backBtnGO = CreateButton("NavBtn_Back", "<- VOLVER A ESCENA 1", navBarGO.transform);
+        backBtnGO.GetComponent<Image>().color = new Color(0.75f, 0.25f, 0.25f);
+        Button backBtn = backBtnGO.GetComponent<Button>();
+        UnityEventTools.AddStringPersistentListener(backBtn.onClick, switcher.LoadScene, "Escena1");
+
+        // BOTONES DE NAVEGACIÓN VISTAS
         string[] btnLabels = { "Inicio", "Sección 1", "Sección 2" };
         for (int i = 0; i < btnLabels.Length; i++)
         {
             int index = i;
-            GameObject btn = CreateButton($"NavBtn_{i}", btnLabels[i], navBarGO.transform);
-            btn.GetComponent<Button>().onClick.AddListener(() => navController.ShowView(index));
+            GameObject btnGO = CreateButton($"NavBtn_{i}", btnLabels[i], navBarGO.transform);
+            Button btn = btnGO.GetComponent<Button>();
+            UnityEventTools.AddIntPersistentListener(btn.onClick, navController.ShowView, index);
         }
 
-        // Mostrar solo la primera vista al inicio
         navController.ShowView(0);
 
-        Undo.RegisterCreatedObjectUndo(canvasGO, "Crear Escena de Navegación 2.2");
+        Undo.RegisterCreatedObjectUndo(canvasGO, "Crear Escena Navegable Actividad 2.2");
         Selection.activeObject = canvasGO;
-        Debug.Log("✅ Escena de navegación configurada con éxito con anclas y respuesta a diferentes tamaños.");
+        Debug.Log("✅ Escena 2 generada correctamente con botones de navegación y retorno a Escena 1.");
     }
 
     private static GameObject CreatePanel(string name, string title, Color color, Transform parent)
@@ -87,8 +94,8 @@ public class SceneNavigationBuilder : EditorWindow
         GameObject panel = new GameObject(name, typeof(Image));
         panel.transform.SetParent(parent, false);
         panel.GetComponent<Image>().color = color;
+        
         RectTransform rect = panel.GetComponent<RectTransform>();
-        // Anclaje central que deja margen para el header y la navbar
         SetAnchors(rect, new Vector2(0.05f, 0.15f), new Vector2(0.95f, 0.85f), new Vector2(0.5f, 0.5f));
         rect.anchoredPosition = Vector2.zero;
         rect.sizeDelta = Vector2.zero;
@@ -98,8 +105,10 @@ public class SceneNavigationBuilder : EditorWindow
         SetAnchors(txtRect, new Vector2(0f, 0.4f), new Vector2(1f, 0.6f), new Vector2(0.5f, 0.5f));
         txtRect.anchoredPosition = Vector2.zero;
         txtRect.sizeDelta = Vector2.zero;
-        txt.GetComponent<TextMeshProUGUI>().alignment = TextAlignmentOptions.Center;
-        txt.GetComponent<TextMeshProUGUI>().fontSize = 32;
+        
+        TextMeshProUGUI tmp = txt.GetComponent<TextMeshProUGUI>();
+        tmp.alignment = TextAlignmentOptions.Center;
+        tmp.fontSize = 32;
 
         return panel;
     }
@@ -117,7 +126,7 @@ public class SceneNavigationBuilder : EditorWindow
         textRect.sizeDelta = Vector2.zero;
 
         TextMeshProUGUI tmp = textGO.GetComponent<TextMeshProUGUI>();
-        tmp.fontSize = 20;
+        tmp.fontSize = 18;
         tmp.alignment = TextAlignmentOptions.Center;
 
         return btnGO;
@@ -138,21 +147,5 @@ public class SceneNavigationBuilder : EditorWindow
         rect.anchorMin = min;
         rect.anchorMax = max;
         rect.pivot = pivot;
-    }
-}
-
-// Clase Runtime auxiliar para controlar el cambio de vistas al hacer clic en los botones
-public class NavigationController : MonoBehaviour
-{
-    public GameObject[] views;
-
-    public void ShowView(int index)
-    {
-        if (views == null) return;
-        for (int i = 0; i < views.Length; i++)
-        {
-            if (views[i] != null)
-                views[i].SetActive(i == index);
-        }
     }
 }
