@@ -55,6 +55,7 @@
   <ItemGroup>
     <Compile Include="Assets/Scripts/SpriteLoopAnimator.cs" />
     <Compile Include="Assets/Scripts/FontController.cs" />
+    <Compile Include="Assets/Scripts/CollisionDetector.cs" />
     <Compile Include="Assets/TutorialInfo/Readme.cs" />
     <Compile Include="Assets/Scripts/NavigationController.cs" />
     <Compile Include="Assets/Scripts/SceneSwitcher.cs" />
