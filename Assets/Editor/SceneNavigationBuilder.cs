@@ -7,7 +7,7 @@ using TMPro;
 
 public class SceneNavigationBuilder : EditorWindow
 {
-    [MenuItem("Tools/Generar Escena Navegable (Actividad 2.2)")]
+    [MenuItem("Tools/Generar Escena Navegable (Actividad 2.3 - Escena 3)")]
     public static void CreateNavigationScene()
     {
         GameObject canvasGO = new GameObject("MainNavigation_Canvas");
@@ -31,19 +31,22 @@ public class SceneNavigationBuilder : EditorWindow
         NavigationController navController = canvasGO.AddComponent<NavigationController>();
         SceneSwitcher switcher = canvasGO.AddComponent<SceneSwitcher>();
 
-        // TÍTULO
-        GameObject titleGO = CreateTextObject("Header_Title", "APLICACIÓN INTERACTIVA - UNIDAD 2", canvasGO.transform);
+        // 1. TÍTULO CON CONTROL DE FUENTE
+        GameObject titleGO = CreateTextObject("Header_Title", "APLICACIÓN INTERACTIVA - ESCENA 3", canvasGO.transform);
         RectTransform titleRect = titleGO.GetComponent<RectTransform>();
         SetAnchors(titleRect, new Vector2(0.1f, 0.88f), new Vector2(0.9f, 0.98f), new Vector2(0.5f, 0.5f));
         titleRect.anchoredPosition = Vector2.zero;
         titleRect.sizeDelta = Vector2.zero;
         
         TextMeshProUGUI titleTMP = titleGO.GetComponent<TextMeshProUGUI>();
-        titleTMP.fontSize = 40;
+        titleTMP.fontSize = 38;
         titleTMP.alignment = TextAlignmentOptions.Center;
         titleTMP.fontStyle = FontStyles.Bold;
 
-        // BARRA DE NAVEGACIÓN
+        FontController fontCtrl = titleGO.AddComponent<FontController>();
+        fontCtrl.targetText = titleTMP;
+
+        // 2. BARRA DE NAVEGACIÓN
         GameObject navBarGO = new GameObject("Navigation_Bar", typeof(Image));
         navBarGO.transform.SetParent(canvasGO.transform, false);
         navBarGO.GetComponent<Image>().color = new Color(0.15f, 0.15f, 0.2f, 0.9f);
@@ -54,25 +57,58 @@ public class SceneNavigationBuilder : EditorWindow
         navBarRect.sizeDelta = Vector2.zero;
 
         HorizontalLayoutGroup navLayout = navBarGO.AddComponent<HorizontalLayoutGroup>();
-        navLayout.spacing = 20;
+        navLayout.spacing = 15;
         navLayout.childControlWidth = true;
         navLayout.childControlHeight = true;
-        navLayout.padding = new RectOffset(30, 30, 15, 15);
+        navLayout.padding = new RectOffset(20, 20, 15, 15);
 
-        // VISTAS DE CONTENIDO
+        // 3. VISTAS DE CONTENIDO (PANELES)
         GameObject view1 = CreatePanel("View_Inicio", "PANEL DE INICIO", new Color(0.2f, 0.2f, 0.25f), canvasGO.transform);
         GameObject view2 = CreatePanel("View_Seccion1", "SECCIÓN 1 - CONTENIDO", new Color(0.2f, 0.3f, 0.4f), canvasGO.transform);
         GameObject view3 = CreatePanel("View_Seccion2", "SECCIÓN 2 - AJUSTES", new Color(0.3f, 0.2f, 0.3f), canvasGO.transform);
 
         navController.views = new GameObject[] { view1, view2, view3 };
 
-        // BOTÓN VOLVER A ESCENA 1
-        GameObject backBtnGO = CreateButton("NavBtn_Back", "<- VOLVER A ESCENA 1", navBarGO.transform);
+        // 4. SPRITE ARRASTRABLE (Colocado dentro del Canvas principal sobre las vistas)
+        GameObject draggableSprite = new GameObject("Draggable_Sprite_Item", typeof(Image), typeof(SpriteDragger));
+        draggableSprite.transform.SetParent(canvasGO.transform, false);
+        Image img = draggableSprite.GetComponent<Image>();
+        img.color = new Color(0.95f, 0.5f, 0.1f, 1f); // Naranja brillante
+        
+        RectTransform spriteRect = draggableSprite.GetComponent<RectTransform>();
+        SetAnchors(spriteRect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f));
+        spriteRect.anchoredPosition = new Vector2(0, -100); // Centrado visible
+        spriteRect.sizeDelta = new Vector2(200, 200);
+
+        GameObject spriteTxt = CreateTextObject("Label", "¡ARRÁSTRAME!", draggableSprite.transform);
+        RectTransform spriteTxtRect = spriteTxt.GetComponent<RectTransform>();
+        spriteTxtRect.anchorMin = Vector2.zero;
+        spriteTxtRect.anchorMax = Vector2.one;
+        spriteTxtRect.sizeDelta = Vector2.zero;
+        
+        TextMeshProUGUI spriteTMP = spriteTxt.GetComponent<TextMeshProUGUI>();
+        spriteTMP.alignment = TextAlignmentOptions.Center;
+        spriteTMP.fontSize = 24;
+        spriteTMP.fontStyle = FontStyles.Bold;
+
+        // BOTONES DE CONTROL DE FUENTE EN BARRA DE NAVEGACIÓN
+        GameObject btnFontInc = CreateButton("Btn_Font_Inc", "Texto A+", navBarGO.transform);
+        btnFontInc.GetComponent<Image>().color = new Color(0.2f, 0.6f, 0.3f);
+        Button fontIncComp = btnFontInc.GetComponent<Button>();
+        UnityEventTools.AddPersistentListener(fontIncComp.onClick, fontCtrl.IncreaseFontSize);
+
+        GameObject btnFontDec = CreateButton("Btn_Font_Dec", "Texto A-", navBarGO.transform);
+        btnFontDec.GetComponent<Image>().color = new Color(0.6f, 0.3f, 0.2f);
+        Button fontDecComp = btnFontDec.GetComponent<Button>();
+        UnityEventTools.AddPersistentListener(fontDecComp.onClick, fontCtrl.DecreaseFontSize);
+
+        // BOTÓN REGRESAR A ESCENA 1 O ESCENA 2
+        GameObject backBtnGO = CreateButton("NavBtn_Back", "<- ESCENA 1", navBarGO.transform);
         backBtnGO.GetComponent<Image>().color = new Color(0.75f, 0.25f, 0.25f);
         Button backBtn = backBtnGO.GetComponent<Button>();
         UnityEventTools.AddStringPersistentListener(backBtn.onClick, switcher.LoadScene, "Escena1");
 
-        // BOTONES DE NAVEGACIÓN VISTAS
+        // BOTONES NAVEGACIÓN ENTRE PANELES
         string[] btnLabels = { "Inicio", "Sección 1", "Sección 2" };
         for (int i = 0; i < btnLabels.Length; i++)
         {
@@ -84,9 +120,9 @@ public class SceneNavigationBuilder : EditorWindow
 
         navController.ShowView(0);
 
-        Undo.RegisterCreatedObjectUndo(canvasGO, "Crear Escena Navegable Actividad 2.2");
+        Undo.RegisterCreatedObjectUndo(canvasGO, "Crear Escena Navegable 3");
         Selection.activeObject = canvasGO;
-        Debug.Log("✅ Escena 2 generada correctamente con botones de navegación y retorno a Escena 1.");
+        Debug.Log("✅ Escena 3 generada con éxito con Sprite arrastrable visible y controles de fuente.");
     }
 
     private static GameObject CreatePanel(string name, string title, Color color, Transform parent)
@@ -102,7 +138,7 @@ public class SceneNavigationBuilder : EditorWindow
 
         GameObject txt = CreateTextObject("Text", title, panel.transform);
         RectTransform txtRect = txt.GetComponent<RectTransform>();
-        SetAnchors(txtRect, new Vector2(0f, 0.4f), new Vector2(1f, 0.6f), new Vector2(0.5f, 0.5f));
+        SetAnchors(txtRect, new Vector2(0f, 0.7f), new Vector2(1f, 0.9f), new Vector2(0.5f, 0.5f));
         txtRect.anchoredPosition = Vector2.zero;
         txtRect.sizeDelta = Vector2.zero;
         
